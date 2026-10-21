@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lançamento de Gastos</title>
+    <!-- Adicionando o Tailwind CSS via CDN para o visual -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Meta tag para o celular entender como web app -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+</head>
+<body class="bg-gray-100 p-4 font-sans min-h-screen">
+    <div class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6">
+        <h1 class="text-2xl font-bold text-center text-green-700 mb-6">Lançamento Rápido</h1>
+        
+        <form id="gastosForm" class="space-y-4">
+            <!-- Valor -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Valor (R$)</label>
+                <input type="number" id="valor" step="0.01" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-green-500 focus:border-green-500 text-lg" placeholder="0,00" required>
+            </div>
+
+            <!-- Descrição -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Descrição</label>
+                <input type="text" id="descricao" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-green-500 focus:border-green-500" placeholder="Ex: Energia, Pão, Gasolina..." required>
+            </div>
+
+            <!-- Forma de Pagamento -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Forma de Pagamento</label>
+                <select id="formaPagamento" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-green-500 focus:border-green-500 bg-white">
+                    <option value="PIX">PIX</option>
+                    <option value="Cartão Nubank">Cartão Nubank</option>
+                    <option value="Cartão Mercado Pago">Cartão Mercado Pago</option>
+                    <option value="Cartão Porto Seguro">Cartão Porto Seguro</option>
+                    <option value="Cartão Magalu">Cartão Magalu</option>
+                    <option value="Débito">Débito</option>
+                    <option value="Dinheiro">Dinheiro</option>
+                </select>
+            </div>
+
+            <!-- Categoria -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Categoria</label>
+                <select id="categoria" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border focus:ring-green-500 focus:border-green-500 bg-white">
+                    <option value="Conta Fixa">Conta Fixa (Água, Luz, Internet...)</option>
+                    <option value="Alimentação">Alimentação (Mercado, Padaria)</option>
+                    <option value="Transporte">Transporte (Combustível, Uber)</option>
+                    <option value="Compra Parcelada">Compra Parcelada</option>
+                    <option value="Lazer">Lazer</option>
+                    <option value="Saúde">Saúde / Farmácia</option>
+                    <option value="Outros">Outros</option>
+                </select>
+            </div>
+
+            <!-- Quem Lançou e Data -->
+            <div class="flex space-x-4">
+                <div class="w-1/2">
+                    <label class="block text-sm font-medium text-gray-700">Quem?</label>
+                    <select id="quemLancou" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border bg-white">
+                        <option value="João">João</option>
+                        <option value="Esposa">Esposa</option>
+                    </select>
+                </div>
+                <div class="w-1/2">
+                    <label class="block text-sm font-medium text-gray-700">Data</label>
+                    <input type="date" id="data" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-3 border" required>
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-md hover:bg-green-700 transition duration-200">
+                Lançar Gasto
+            </button>
+        </form>
+    </div>
+
+    <!-- Histórico Recente e Total -->
+    <div class="max-w-md mx-auto mt-6 bg-white rounded-xl shadow-md overflow-hidden p-6 mb-10">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-bold text-gray-800">Lançamentos Locais</h2>
+            <span class="text-lg font-bold text-red-600">Total: R$ <span id="totalGastos">0,00</span></span>
+        </div>
+        
+        <ul id="listaGastos" class="divide-y divide-gray-200">
+            <!-- Itens serão renderizados aqui pelo Javascript -->
+        </ul>
+        <div class="mt-4 text-xs text-gray-400 text-center">
+            *Os dados deste arquivo HTML ficam salvos apenas no seu navegador.
+        </div>
+    </div>
+
+    <!-- Javascript embutido para fazer o app funcionar sem servidores -->
+    <script>
+        // Seta a data de hoje por padrão
+        document.getElementById('data').valueAsDate = new Date();
+        
+        // Carrega os gastos salvos na memória do navegador (localStorage)
+        let gastos = JSON.parse(localStorage.getItem('gastosAppLocal')) || [];
+
+        function renderizarGastos() {
+            const lista = document.getElementById('listaGastos');
+            const spanTotal = document.getElementById('totalGastos');
+            
+            lista.innerHTML = '';
+            let total = 0;
+
+            if (gastos.length === 0) {
+                lista.innerHTML = '<li class="text-gray-500 text-center py-4">Nenhum gasto lançado ainda.</li>';
+            } else {
+                gastos.forEach(gasto => {
+                    total += gasto.valor;
+                    const li = document.createElement('li');
+                    li.className = 'py-3 flex justify-between items-center';
+                    li.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-gray-800">${gasto.descricao}</p>
+                            <p class="text-xs text-gray-500">${gasto.formaPagamento} &bull; ${gasto.categoria} &bull; ${gasto.quemLancou}</p>
+                        </div>
+                        <span class="font-bold text-gray-700">R$ ${gasto.valor.toFixed(2).replace('.', ',')}</span>
+                    `;
+                    lista.appendChild(li);
+                });
+            }
+            // Atualiza o total
+            spanTotal.innerText = total.toFixed(2).replace('.', ',');
+        }
+
+        document.getElementById('gastosForm').addEventListener('submit', function(e) {
+            e.preventDefault(); // Evita recarregar a página
+            
+            const valor = parseFloat(document.getElementById('valor').value);
+            const descricao = document.getElementById('descricao').value;
+            const formaPagamento = document.getElementById('formaPagamento').value;
+            const categoria = document.getElementById('categoria').value;
+            const quemLancou = document.getElementById('quemLancou').value;
+            const data = document.getElementById('data').value;
+
+            if (!valor || !descricao) return;
+
+            // Cria o objeto do gasto
+            const novoGasto = { 
+                id: Date.now(), 
+                valor: valor, 
+                descricao: descricao, 
+                formaPagamento: formaPagamento, 
+                categoria: categoria, 
+                quemLancou: quemLancou, 
+                data: data 
+            };
+
+            // Adiciona no início da lista
+            gastos.unshift(novoGasto);
+            
+            // Salva na memória do navegador
+            localStorage.setItem('gastosAppLocal', JSON.stringify(gastos));
+
+            // Limpa apenas o valor e descrição para facilitar lançamentos em sequência
+            document.getElementById('valor').value = '';
+            document.getElementById('descricao').value = '';
+            
+            // Re-renderiza a lista
+            renderizarGastos();
+        });
+
+        // Chamada inicial
+        renderizarGastos();
+    </script>
+</body>
+</html>
